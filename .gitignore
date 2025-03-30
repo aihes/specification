@@ -1,2 +1,7 @@
 node_modules/
 .DS_Store
+.vercel
+.env
+site/public/
+site/resources/
+.hugo_build.lock
