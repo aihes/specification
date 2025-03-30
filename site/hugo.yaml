@@ -1,4 +1,5 @@
-baseURL: "https://spec.modelcontextprotocol.io"
+# 移除固定的 baseURL，使用相对路径
+baseURL: "/"
 defaultContentLanguage: en
 defaultContentLanguageInSubdir: true
 
