@@ -7,9 +7,13 @@ echo "Current PATH: $PATH"
 echo "Current user: $(whoami)"
 echo "System information: $(uname -a)"
 
-# 设置安装目录
-INSTALL_DIR="/usr/local"
+# 设置安装目录为用户目录
+INSTALL_DIR="$HOME/.local"
 GO_INSTALL_DIR="$INSTALL_DIR/go"
+BIN_DIR="$INSTALL_DIR/bin"
+
+# 创建必要的目录
+mkdir -p $GO_INSTALL_DIR $BIN_DIR
 
 echo "=== Installing Go ==="
 echo "Downloading Go..."
@@ -21,28 +25,18 @@ tar -xzf go.tar.gz || echo "Failed to extract Go"
 ls -la go/ || echo "Go directory not found"
 
 echo "Setting up Go environment..."
-sudo mkdir -p $GO_INSTALL_DIR
-sudo mv go/* $GO_INSTALL_DIR/ || echo "Failed to move Go to $GO_INSTALL_DIR"
+cp -r go/* $GO_INSTALL_DIR/ || echo "Failed to copy Go to $GO_INSTALL_DIR"
 ls -la $GO_INSTALL_DIR || echo "Go not found in $GO_INSTALL_DIR"
 
-# 设置永久环境变量
-echo "Setting up permanent environment variables..."
-sudo tee /etc/profile.d/go.sh << EOF
+# 设置环境变量
+echo "Setting up environment variables..."
 export GOROOT=$GO_INSTALL_DIR
 export GOPATH=$INSTALL_DIR/gopath
-export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
-export GO111MODULE=on
-EOF
-
-# 立即生效环境变量
-export GOROOT=$GO_INSTALL_DIR
-export GOPATH=$INSTALL_DIR/gopath
-export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+export PATH=$GOROOT/bin:$GOPATH/bin:$BIN_DIR:$PATH
 export GO111MODULE=on
 
 # 创建必要的目录
-sudo mkdir -p $GOPATH/{bin,src,pkg}
-sudo chmod -R 777 $GOPATH
+mkdir -p $GOPATH/{bin,src,pkg}
 
 # 验证 Go 安装
 echo "Verifying Go installation..."
@@ -61,10 +55,10 @@ echo "Extracting and installing Hugo..."
 tar -xzf hugo.tar.gz || echo "Failed to extract Hugo"
 ls -la hugo || echo "Hugo binary not found"
 
-echo "Moving Hugo to /usr/local/bin..."
-sudo mv hugo $INSTALL_DIR/bin/ || echo "Failed to move Hugo to $INSTALL_DIR/bin"
-sudo chmod +x $INSTALL_DIR/bin/hugo
-ls -la $INSTALL_DIR/bin/hugo || echo "Hugo not found in $INSTALL_DIR/bin"
+echo "Moving Hugo to bin directory..."
+mv hugo $BIN_DIR/ || echo "Failed to move Hugo to $BIN_DIR"
+chmod +x $BIN_DIR/hugo
+ls -la $BIN_DIR/hugo || echo "Hugo not found in $BIN_DIR"
 
 # 验证 Hugo 安装
 echo "Verifying Hugo installation..."
@@ -105,7 +99,7 @@ cat > build.sh << EOF
 #!/bin/bash
 export GOROOT=$GO_INSTALL_DIR
 export GOPATH=$INSTALL_DIR/gopath
-export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+export PATH=$GOROOT/bin:$GOPATH/bin:$BIN_DIR:$PATH
 export GO111MODULE=on
 cd site && hugo --minify
 EOF
@@ -116,8 +110,8 @@ echo "=== Installation complete ==="
 echo "Final PATH: $PATH"
 echo "Final GOROOT: $GOROOT"
 echo "Final GOPATH: $GOPATH"
-echo "Directory contents of $INSTALL_DIR/bin:"
-ls -la $INSTALL_DIR/bin/
+echo "Directory contents of $BIN_DIR:"
+ls -la $BIN_DIR/
 echo "Directory contents of $GOROOT/bin:"
 ls -la $GOROOT/bin/
 
