@@ -1,10 +1,11 @@
 {
-  "buildCommand": "cd site && HUGO_BASEURL=$VERCEL_URL hugo --minify",
+  "buildCommand": "cd site && hugo --minify",
   "outputDirectory": "site/public",
   "framework": "hugo",
   "build": {
     "env": {
-      "HUGO_VERSION": "0.136.1"
+      "HUGO_VERSION": "0.136.1",
+      "HUGO_ENVIRONMENT": "production"
     }
   },
   "headers": [
@@ -22,6 +23,10 @@
         {
           "key": "X-XSS-Protection",
           "value": "1; mode=block"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
         }
       ]
     }
@@ -47,5 +52,7 @@
       "destination": "/zh/specification/2025-03-26/",
       "permanent": false
     }
-  ]
+  ],
+  "cleanUrls": true,
+  "trailingSlash": true
 } 
