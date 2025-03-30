@@ -1,5 +1,5 @@
 {
-  "buildCommand": "bash install-hugo.sh && ./build.sh",
+  "buildCommand": "bash install-hugo.sh",
   "installCommand": "echo 'No install command needed'",
   "outputDirectory": "site/public",
   "framework": "hugo",

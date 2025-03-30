@@ -1,8 +1,11 @@
 #!/bin/bash
 set -x  # 启用调试模式，显示执行的每个命令
 
+# 保存当前目录
+CURRENT_DIR=$(pwd)
+
 echo "=== Starting installation script ==="
-echo "Current working directory: $(pwd)"
+echo "Current working directory: $CURRENT_DIR"
 echo "Current PATH: $PATH"
 echo "Current user: $(whoami)"
 echo "System information: $(uname -a)"
@@ -93,18 +96,16 @@ echo "=== Verifying module setup ==="
 ls -la go.mod go.sum || echo "Module files not found"
 go env || echo "Go environment not set"
 
-# 创建构建脚本
-echo "Creating build script..."
-cat > build.sh << EOF
-#!/bin/bash
+# 返回到原始目录
+cd $CURRENT_DIR
+
+# 直接执行 Hugo 命令而不是创建构建脚本
+echo "=== Building Hugo site ==="
 export GOROOT=$GO_INSTALL_DIR
 export GOPATH=$INSTALL_DIR/gopath
 export PATH=$GOROOT/bin:$GOPATH/bin:$BIN_DIR:$PATH
 export GO111MODULE=on
 cd site && hugo --minify
-EOF
-
-chmod +x build.sh
 
 echo "=== Installation complete ==="
 echo "Final PATH: $PATH"
