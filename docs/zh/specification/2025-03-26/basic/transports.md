@@ -1,6 +1,6 @@
 ---
 title: 传输机制
-type: 文档
+type: docs
 weight: 10
 ---
 

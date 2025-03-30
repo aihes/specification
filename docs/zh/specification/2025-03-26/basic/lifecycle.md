@@ -1,6 +1,6 @@
 ---
 title: 生命周期
-type: 文档
+type: docs
 weight: 30
 ---
 
