@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd site && hugo --minify",
-  "outputDirectory": "site/public",
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": "public",
   "framework": "hugo",
   "build": {
     "env": {
