@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd site && hugo --minify",
-  "installCommand": "chmod +x ./install-hugo.sh && ./install-hugo.sh",
+  "buildCommand": "bash install-hugo.sh && ./build.sh",
+  "installCommand": "echo 'No install command needed'",
   "outputDirectory": "site/public",
   "framework": "hugo",
   "build": {

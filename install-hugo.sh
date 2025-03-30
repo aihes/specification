@@ -7,6 +7,10 @@ echo "Current PATH: $PATH"
 echo "Current user: $(whoami)"
 echo "System information: $(uname -a)"
 
+# 设置安装目录
+INSTALL_DIR="/usr/local"
+GO_INSTALL_DIR="$INSTALL_DIR/go"
+
 echo "=== Installing Go ==="
 echo "Downloading Go..."
 curl -L https://dl.google.com/go/go1.21.0.linux-amd64.tar.gz -o go.tar.gz
@@ -17,21 +21,36 @@ tar -xzf go.tar.gz || echo "Failed to extract Go"
 ls -la go/ || echo "Go directory not found"
 
 echo "Setting up Go environment..."
-mkdir -p /tmp/go-path
-mv go /tmp/ || echo "Failed to move Go to /tmp"
-ls -la /tmp/go || echo "Go not found in /tmp"
+sudo mkdir -p $GO_INSTALL_DIR
+sudo mv go/* $GO_INSTALL_DIR/ || echo "Failed to move Go to $GO_INSTALL_DIR"
+ls -la $GO_INSTALL_DIR || echo "Go not found in $GO_INSTALL_DIR"
 
-# 导出并验证环境变量（确保在当前shell和子进程中都可用）
-export PATH=/tmp/go/bin:$PATH
-export GOPATH=/tmp/go-path
+# 设置永久环境变量
+echo "Setting up permanent environment variables..."
+sudo tee /etc/profile.d/go.sh << EOF
+export GOROOT=$GO_INSTALL_DIR
+export GOPATH=$INSTALL_DIR/gopath
+export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 export GO111MODULE=on
-echo "Updated PATH: $PATH"
-echo "GOPATH: $GOPATH"
+EOF
+
+# 立即生效环境变量
+export GOROOT=$GO_INSTALL_DIR
+export GOPATH=$INSTALL_DIR/gopath
+export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+export GO111MODULE=on
+
+# 创建必要的目录
+sudo mkdir -p $GOPATH/{bin,src,pkg}
+sudo chmod -R 777 $GOPATH
 
 # 验证 Go 安装
 echo "Verifying Go installation..."
 which go || echo "Go not found in PATH"
 go version || echo "Go command failed"
+echo "Current PATH: $PATH"
+echo "GOROOT: $GOROOT"
+echo "GOPATH: $GOPATH"
 
 echo "=== Installing Hugo ==="
 echo "Downloading Hugo..."
@@ -43,39 +62,14 @@ tar -xzf hugo.tar.gz || echo "Failed to extract Hugo"
 ls -la hugo || echo "Hugo binary not found"
 
 echo "Moving Hugo to /usr/local/bin..."
-mv hugo /usr/local/bin/ || echo "Failed to move Hugo to /usr/local/bin"
-ls -la /usr/local/bin/hugo || echo "Hugo not found in /usr/local/bin"
+sudo mv hugo $INSTALL_DIR/bin/ || echo "Failed to move Hugo to $INSTALL_DIR/bin"
+sudo chmod +x $INSTALL_DIR/bin/hugo
+ls -la $INSTALL_DIR/bin/hugo || echo "Hugo not found in $INSTALL_DIR/bin"
 
 # 验证 Hugo 安装
 echo "Verifying Hugo installation..."
 which hugo || echo "Hugo not found in PATH"
 hugo version || echo "Hugo command failed"
-
-echo "=== Setting up environment variables ==="
-# 创建环境变量脚本并使其立即生效
-echo "Creating and sourcing environment variable script..."
-cat > /tmp/env.sh << EOF
-export PATH=/tmp/go/bin:$PATH
-export GOPATH=/tmp/go-path
-export GO111MODULE=on
-EOF
-source /tmp/env.sh
-cat /tmp/env.sh
-
-echo "=== Installation complete ==="
-echo "Final PATH: $PATH"
-echo "Final GOPATH: $GOPATH"
-echo "Directory contents of /usr/local/bin:"
-ls -la /usr/local/bin/
-echo "Directory contents of /tmp/go/bin:"
-ls -la /tmp/go/bin/
-
-# 检查模块下载权限
-echo "=== Checking permissions ==="
-echo "Temporary directory permissions:"
-ls -la /tmp/
-echo "Go path permissions:"
-ls -la /tmp/go-path/
 
 # 验证 Hugo 模块功能
 echo "=== Testing Hugo modules ==="
@@ -83,16 +77,20 @@ cd site || echo "Failed to change to site directory"
 
 # 检查并处理现有的 go.mod
 if [ -f "go.mod" ]; then
-    echo "Existing go.mod found, skipping hugo mod init"
+    echo "Existing go.mod found:"
     cat go.mod
+    # 重新初始化模块
+    rm go.mod go.sum
+    hugo mod init github.com/modelcontextprotocol/specification || echo "Hugo mod init failed"
 else
     echo "Initializing new go.mod"
-    hugo mod init || echo "Hugo mod init failed"
+    hugo mod init github.com/modelcontextprotocol/specification || echo "Hugo mod init failed"
 fi
 
 # 清理和下载模块
 echo "Cleaning and downloading modules..."
 hugo mod clean || echo "Hugo mod clean failed"
+hugo mod get -u ./... || echo "Hugo mod get failed"
 hugo mod tidy || echo "Hugo mod tidy failed"
 hugo mod verify || echo "Hugo mod verify failed"
 
@@ -100,5 +98,27 @@ hugo mod verify || echo "Hugo mod verify failed"
 echo "=== Verifying module setup ==="
 ls -la go.mod go.sum || echo "Module files not found"
 go env || echo "Go environment not set"
+
+# 创建构建脚本
+echo "Creating build script..."
+cat > build.sh << EOF
+#!/bin/bash
+export GOROOT=$GO_INSTALL_DIR
+export GOPATH=$INSTALL_DIR/gopath
+export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+export GO111MODULE=on
+cd site && hugo --minify
+EOF
+
+chmod +x build.sh
+
+echo "=== Installation complete ==="
+echo "Final PATH: $PATH"
+echo "Final GOROOT: $GOROOT"
+echo "Final GOPATH: $GOPATH"
+echo "Directory contents of $INSTALL_DIR/bin:"
+ls -la $INSTALL_DIR/bin/
+echo "Directory contents of $GOROOT/bin:"
+ls -la $GOROOT/bin/
 
 set +x  # 关闭调试模式
