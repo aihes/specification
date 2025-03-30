@@ -21,9 +21,10 @@ mkdir -p /tmp/go-path
 mv go /tmp/ || echo "Failed to move Go to /tmp"
 ls -la /tmp/go || echo "Go not found in /tmp"
 
-# 导出并验证环境变量
-export PATH=$PATH:/tmp/go/bin
+# 导出并验证环境变量（确保在当前shell和子进程中都可用）
+export PATH=/tmp/go/bin:$PATH
 export GOPATH=/tmp/go-path
+export GO111MODULE=on
 echo "Updated PATH: $PATH"
 echo "GOPATH: $GOPATH"
 
@@ -34,7 +35,7 @@ go version || echo "Go command failed"
 
 echo "=== Installing Hugo ==="
 echo "Downloading Hugo..."
-curl -L https://github.com/gohugoio/hugo/releases/download/v0.136.1/hugo_0.136.1_linux-amd64.tar.gz -o hugo.tar.gz
+curl -L https://github.com/gohugoio/hugo/releases/download/v0.136.1/hugo_extended_0.136.1_linux-amd64.tar.gz -o hugo.tar.gz
 ls -la hugo.tar.gz || echo "Failed to download Hugo"
 
 echo "Extracting and installing Hugo..."
@@ -51,10 +52,14 @@ which hugo || echo "Hugo not found in PATH"
 hugo version || echo "Hugo command failed"
 
 echo "=== Setting up environment variables ==="
-# 创建环境变量脚本
-echo "Creating environment variable script..."
-echo 'export PATH=$PATH:/tmp/go/bin' > /tmp/env.sh
-echo 'export GOPATH=/tmp/go-path' >> /tmp/env.sh
+# 创建环境变量脚本并使其立即生效
+echo "Creating and sourcing environment variable script..."
+cat > /tmp/env.sh << EOF
+export PATH=/tmp/go/bin:$PATH
+export GOPATH=/tmp/go-path
+export GO111MODULE=on
+EOF
+source /tmp/env.sh
 cat /tmp/env.sh
 
 echo "=== Installation complete ==="
@@ -75,7 +80,25 @@ ls -la /tmp/go-path/
 # 验证 Hugo 模块功能
 echo "=== Testing Hugo modules ==="
 cd site || echo "Failed to change to site directory"
-hugo mod init || echo "Hugo mod init failed"
+
+# 检查并处理现有的 go.mod
+if [ -f "go.mod" ]; then
+    echo "Existing go.mod found, skipping hugo mod init"
+    cat go.mod
+else
+    echo "Initializing new go.mod"
+    hugo mod init || echo "Hugo mod init failed"
+fi
+
+# 清理和下载模块
+echo "Cleaning and downloading modules..."
+hugo mod clean || echo "Hugo mod clean failed"
+hugo mod tidy || echo "Hugo mod tidy failed"
 hugo mod verify || echo "Hugo mod verify failed"
+
+# 确保模块下载成功
+echo "=== Verifying module setup ==="
+ls -la go.mod go.sum || echo "Module files not found"
+go env || echo "Go environment not set"
 
 set +x  # 关闭调试模式
