@@ -105,7 +105,7 @@ export GOROOT=$GO_INSTALL_DIR
 export GOPATH=$INSTALL_DIR/gopath
 export PATH=$GOROOT/bin:$GOPATH/bin:$BIN_DIR:$PATH
 export GO111MODULE=on
-cd site && hugo --minify
+cd site && rm -rf public/* && hugo --minify
 
 echo "=== Installation complete ==="
 echo "Final PATH: $PATH"
